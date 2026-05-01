@@ -68,6 +68,21 @@ When running as a module from the repository root, set `PYTHONPATH=code` if your
 
 If `GEMINI_API_KEY` is set, responses are generated with Gemini using only retrieved documentation as context. The default model is `gemini-2.5-flash`, and you can override it with `GEMINI_MODEL`. If the key or package is unavailable, the agent falls back to a deterministic grounded response so the project still runs offline.
 
+Create a local `.env` file for your API key:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
+
+```text
+GEMINI_API_KEY=your_real_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+The `.env` file is ignored by git and should not be committed.
+
 ## Design Notes
 
 - The default retriever is a pure-Python TF-IDF cosine retriever, so the project runs without FAISS or model downloads.

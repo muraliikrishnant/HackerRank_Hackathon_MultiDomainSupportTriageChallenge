@@ -5,6 +5,7 @@ import csv
 import sys
 from pathlib import Path
 
+from env_loader import load_dotenv
 from agent.models import Ticket
 from agent.pipeline import SupportTriagePipeline
 from corpus.chunker import build_jsonl_index
@@ -119,6 +120,7 @@ def _raw_get(row: dict[str, str], key: str) -> str:
 
 
 def main() -> int:
+    load_dotenv()
     args = parse_args()
     if args.scrape:
         results = scrape_all(args.corpus_dir, limit_per_domain=args.scrape_limit)
