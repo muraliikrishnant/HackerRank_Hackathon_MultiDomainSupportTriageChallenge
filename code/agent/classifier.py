@@ -84,6 +84,8 @@ def classify(ticket_text: str, company: str | None = None) -> Classification:
     domain_scores: Counter[str] = Counter()
     signals: list[str] = []
     company_domain = _company_domain(company)
+    domain = "unknown"
+    domain_confidence = 0.2
 
     if company_domain:
         domain = company_domain

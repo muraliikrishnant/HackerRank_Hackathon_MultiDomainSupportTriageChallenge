@@ -67,7 +67,7 @@ def _try_generate_with_claude(ticket: Ticket, chunks: list[Chunk], classificatio
     try:
         client = Anthropic(api_key=api_key)
         message = client.messages.create(
-            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
+            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
             max_tokens=450,
             temperature=0.2,
             system=SYSTEM_PROMPT,
