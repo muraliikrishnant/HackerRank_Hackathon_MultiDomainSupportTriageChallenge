@@ -25,7 +25,7 @@ def generate_response(
     if not chunks:
         return _escalation_response(classification, TriageDecision("escalate", "missing_context", 0.8))
 
-    llm_response = _try_generate_with_claude(ticket, chunks, classification)
+    llm_response = _try_generate_with_gemini(ticket, chunks, classification)
     if llm_response:
         return llm_response
 
@@ -40,13 +40,13 @@ def generate_response(
     )
 
 
-def _try_generate_with_claude(ticket: Ticket, chunks: list[Chunk], classification: Classification) -> str | None:
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+def _try_generate_with_gemini(ticket: Ticket, chunks: list[Chunk], classification: Classification) -> str | None:
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return None
 
     try:
-        from anthropic import Anthropic
+        from google import genai
     except ImportError:
         return None
 
@@ -65,20 +65,15 @@ def _try_generate_with_claude(ticket: Ticket, chunks: list[Chunk], classificatio
     )
 
     try:
-        client = Anthropic(api_key=api_key)
-        message = client.messages.create(
-            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
-            max_tokens=450,
-            temperature=0.2,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt}],
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+            contents=f"{SYSTEM_PROMPT}\n\n{prompt}",
         )
     except Exception:
         return None
 
-    parts = [block.text for block in message.content if getattr(block, "type", None) == "text"]
-    response = "\n".join(part.strip() for part in parts if part.strip()).strip()
-    return response or None
+    return (getattr(response, "text", "") or "").strip() or None
 
 
 def _escalation_response(classification: Classification, decision: TriageDecision) -> str:

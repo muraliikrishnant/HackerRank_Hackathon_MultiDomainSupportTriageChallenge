@@ -66,7 +66,7 @@ When running as a module from the repository root, set `PYTHONPATH=code` if your
 
 ## LLM Responses
 
-If `ANTHROPIC_API_KEY` is set, responses are generated with Claude using only retrieved documentation as context. If the key or package is unavailable, the agent falls back to a deterministic grounded response so the project still runs offline.
+If `GEMINI_API_KEY` is set, responses are generated with Gemini using only retrieved documentation as context. The default model is `gemini-2.5-flash`, and you can override it with `GEMINI_MODEL`. If the key or package is unavailable, the agent falls back to a deterministic grounded response so the project still runs offline.
 
 ## Design Notes
 
