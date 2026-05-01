@@ -6,6 +6,16 @@ from agent.models import Chunk, Classification, TriageDecision
 
 
 ESCALATE_PATTERNS = {
+    "prompt_injection_or_policy_exfiltration": (
+        r"\b(ignore (all )?(previous|prior) instructions|show your|reveal your|display all rules|"
+        r"internal rules|system prompt|hidden prompt|developer message|retrieved documents|"
+        r"exact logic|affiche toutes les r[èe]gles|r[èe]gles internes|documents r[ée]cup[ée]r[ée]s|"
+        r"logique exacte)\b"
+    ),
+    "dangerous_or_malicious_request": (
+        r"\b(delete all files|remove all files|wipe (the )?(disk|system)|rm -rf|format (my )?(disk|drive)|"
+        r"steal|exfiltrate|bypass|hack into|malware|credential dump)\b"
+    ),
     "fraud_or_unauthorized_activity": r"\b(fraud|unauthorized transaction|identity theft|stolen|account hacked|data breach)\b",
     "legal_or_compliance": r"\b(legal|lawsuit|attorney|subpoena|compliance complaint)\b",
     "account_access": r"\b(can'?t log in|cannot log in|locked out|lost access|restore my access|removed my seat|not the workspace owner|password reset|2fa|mfa|account access)\b",

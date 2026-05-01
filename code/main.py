@@ -8,6 +8,7 @@ from pathlib import Path
 from agent.models import Ticket
 from agent.pipeline import SupportTriagePipeline
 from corpus.chunker import build_jsonl_index
+from corpus.scraper import scrape_all
 
 
 INTERNAL_FIELDNAMES = [
@@ -42,6 +43,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--corpus-dir", default="data", help="Directory containing domain/*.txt docs.")
     parser.add_argument("--index", default="vector_store/chunks.jsonl", help="Chunk index JSONL path.")
     parser.add_argument("--top-k", type=int, default=5, help="Number of retrieved chunks per ticket.")
+    parser.add_argument("--scrape", action="store_true", help="Scrape support docs before building the index.")
+    parser.add_argument("--scrape-limit", type=int, default=50, help="Maximum scraped pages per domain.")
     parser.add_argument("--build-index", action="store_true", help="Build chunk index before running tickets.")
     return parser.parse_args()
 
@@ -117,9 +120,18 @@ def _raw_get(row: dict[str, str], key: str) -> str:
 
 def main() -> int:
     args = parse_args()
+    if args.scrape:
+        results = scrape_all(args.corpus_dir, limit_per_domain=args.scrape_limit)
+        print(f"Scraped corpus: {results}", file=sys.stderr)
+
     if args.build_index or not Path(args.index).exists():
         count = build_jsonl_index(args.corpus_dir, args.index)
         print(f"Built index with {count} chunks at {args.index}", file=sys.stderr)
+        if count == 0:
+            print(
+                "Warning: index contains no chunks. Run with --scrape or add docs under data/{domain}/*.txt.",
+                file=sys.stderr,
+            )
 
     tickets = read_tickets(args.input)
     pipeline = SupportTriagePipeline(args.index, args.log, top_k=args.top_k)

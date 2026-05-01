@@ -49,6 +49,9 @@ class Retriever:
         self.chunks = self._load_chunks()
         self.doc_freq = self._doc_freq()
         self.total_docs = max(len(self.chunks), 1)
+        self.chunk_vectors = {
+            chunk.id: self._tfidf(tokenize(f"{chunk.title} {chunk.text}")) for chunk in self.chunks
+        }
 
     def _load_chunks(self) -> list[Chunk]:
         if not self.index_path.exists():
@@ -73,7 +76,7 @@ class Retriever:
     def _doc_freq(self) -> Counter[str]:
         freq: Counter[str] = Counter()
         for chunk in self.chunks:
-            freq.update(set(tokenize(chunk.text)))
+            freq.update(set(tokenize(f"{chunk.title} {chunk.text}")))
         return freq
 
     def _tfidf(self, tokens: list[str]) -> dict[str, float]:
@@ -106,7 +109,7 @@ class Retriever:
         query_vec = self._tfidf(tokenize(ticket_text))
         scored: list[Chunk] = []
         for chunk in candidates:
-            chunk_vec = self._tfidf(tokenize(f"{chunk.title} {chunk.text}"))
+            chunk_vec = self.chunk_vectors.get(chunk.id, {})
             score = self._cosine(query_vec, chunk_vec)
             if score > 0:
                 scored.append(

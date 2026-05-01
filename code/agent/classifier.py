@@ -48,7 +48,7 @@ DOMAIN_KEYWORDS = {
 
 ISSUE_PATTERNS = [
     ("fraud", r"\b(fraud|unauthorized|identity theft|stolen card|unknown charge)\b"),
-    ("billing_dispute", r"\b(refund|chargeback|billing dispute|incorrect charge|overcharged)\b"),
+    ("billing_dispute", r"\b(refund|chargeback|billing dispute|incorrect charge|overcharged|payment issue|wrong product)\b"),
     ("account_access", r"\b(can'?t log in|cannot log in|locked out|account hacked|password reset|2fa|mfa|login)\b"),
     ("assessment", r"\b(assessment|test|score|proctor|candidate|plagiarism|coding challenge)\b"),
     ("permissions", r"\b(permission|role|admin|access denied|workspace access|team access)\b"),
@@ -61,7 +61,7 @@ PRODUCT_AREAS = [
     ("hackerrank", "Assessments > Scores", r"\b(score|result|grade|plagiarism)\b"),
     ("claude", "Claude > API", r"\b(api|key|token|rate limit|console|model)\b"),
     ("claude", "Claude > Billing", r"\b(billing|invoice|subscription|refund|charge)\b"),
-    ("visa", "Visa > Disputes", r"\b(dispute|chargeback|unauthorized|fraud)\b"),
+    ("visa", "Visa > Disputes", r"\b(dispute|chargeback|unauthorized|fraud|refund|wrong product)\b"),
     ("visa", "Visa > Card Support", r"\b(card|pin|cvv|merchant|transaction)\b"),
 ]
 
@@ -70,22 +70,37 @@ def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.lower()).strip()
 
 
-def classify(ticket_text: str) -> Classification:
+COMPANY_DOMAINS = {
+    "visa": "visa",
+    "hackerrank": "hackerrank",
+    "hacker rank": "hackerrank",
+    "claude": "claude",
+    "anthropic": "claude",
+}
+
+
+def classify(ticket_text: str, company: str | None = None) -> Classification:
     text = _normalize(ticket_text)
     domain_scores: Counter[str] = Counter()
     signals: list[str] = []
+    company_domain = _company_domain(company)
 
-    for domain, keywords in DOMAIN_KEYWORDS.items():
-        for keyword in keywords:
-            if keyword in text:
-                domain_scores[domain] += 2 if " " in keyword else 1
-                signals.append(f"domain:{domain}:{keyword}")
+    if company_domain:
+        domain = company_domain
+        domain_confidence = 0.98
+        signals.append(f"domain:company_override:{company_domain}")
+    else:
+        for scored_domain, keywords in DOMAIN_KEYWORDS.items():
+            for keyword in keywords:
+                if keyword in text:
+                    domain_scores[scored_domain] += 2 if " " in keyword else 1
+                    signals.append(f"domain:{scored_domain}:{keyword}")
 
-    if domain_scores:
+    if not company_domain and domain_scores:
         domain, score = domain_scores.most_common(1)[0]
         total = sum(domain_scores.values())
         domain_confidence = min(0.95, 0.45 + (score / max(total, 1)) * 0.5)
-    else:
+    elif not company_domain:
         domain = "unknown"
         domain_confidence = 0.2
 
@@ -109,3 +124,12 @@ def classify(ticket_text: str) -> Classification:
 
     confidence = round((domain_confidence + (0.75 if issue_type != "other" else 0.35)) / 2, 3)
     return Classification(domain, issue_type, product_area, confidence, signals)
+
+
+def _company_domain(company: str | None) -> str | None:
+    if not company:
+        return None
+    normalized = _normalize(company)
+    if normalized in {"", "none", "null", "unknown", "n/a", "na"}:
+        return None
+    return COMPANY_DOMAINS.get(normalized)

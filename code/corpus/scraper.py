@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from pathlib import Path
@@ -84,3 +85,18 @@ def _slugify(value: str) -> str:
     value = re.sub(r"[^a-zA-Z0-9]+", "-", value.lower()).strip("-")
     return value[:80] or "article"
 
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Scrape support documentation into data/{domain}/*.txt.")
+    parser.add_argument("--output-dir", default="data", help="Directory where scraped documents are written.")
+    parser.add_argument("--limit-per-domain", type=int, default=50, help="Maximum pages to save per domain.")
+    args = parser.parse_args()
+
+    results = scrape_all(args.output_dir, limit_per_domain=args.limit_per_domain)
+    for domain, count in results.items():
+        print(f"{domain}: saved {count} documents")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

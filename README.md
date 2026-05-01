@@ -8,6 +8,12 @@ Runnable baseline for a HackerRank hackathon support triage agent. It classifies
 python3 code/main.py --build-index
 ```
 
+To scrape fresh docs first:
+
+```bash
+python3 code/main.py --scrape --build-index
+```
+
 Expected corpus layout:
 
 ```text
@@ -50,12 +56,17 @@ For generic CSV inputs, the output contains:
 
 ## Scraping
 
-The scraper is optional because live website access may be restricted in judging environments.
+The scraper is optional because live website access may be restricted in judging environments. It can be run through the main CLI or directly:
 
-```python
-from corpus.scraper import scrape_all
-scrape_all("data", limit_per_domain=50)
+```bash
+python3 -m corpus.scraper --output-dir data --limit-per-domain 50
 ```
+
+When running as a module from the repository root, set `PYTHONPATH=code` if your shell cannot resolve `corpus`.
+
+## LLM Responses
+
+If `ANTHROPIC_API_KEY` is set, responses are generated with Claude using only retrieved documentation as context. If the key or package is unavailable, the agent falls back to a deterministic grounded response so the project still runs offline.
 
 ## Design Notes
 

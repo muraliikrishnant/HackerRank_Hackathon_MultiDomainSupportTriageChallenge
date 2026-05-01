@@ -15,7 +15,7 @@ class SupportTriagePipeline:
         self.top_k = top_k
 
     def process(self, ticket: Ticket) -> dict[str, str | float]:
-        classification = classify(ticket.text)
+        classification = classify(ticket.text, company=_raw_get(ticket.raw, "company"))
         chunks = self.retriever.retrieve(ticket.text, classification.domain, top_k=self.top_k)
         decision = should_escalate(ticket.text, chunks, classification)
         response = generate_response(ticket, chunks, classification, decision)
@@ -34,3 +34,9 @@ class SupportTriagePipeline:
             "triage_reason": decision.reason,
         }
 
+
+def _raw_get(row: dict[str, object], key: str) -> str:
+    for row_key, value in row.items():
+        if row_key.lower().strip() == key:
+            return str(value or "")
+    return ""
